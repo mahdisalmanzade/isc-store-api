@@ -5,7 +5,7 @@ ISC Store API
 
 A Spring Boot-based RESTful API for managing an online store. Supports user authentication with JWT, product and cart management, and easy testing with Swagger UI. Dockerized for easy deployment.
 
-Features
+# Features
 
 User registration and login with JWT authentication
 
@@ -35,8 +35,7 @@ Swagger (OpenAPI)
 
 Docker
 
-Getting Started
-Prerequisites
+# Getting Started - Prerequisites
 
 Java 21
 
@@ -60,7 +59,7 @@ Run the application:
 mvn spring-boot:run
 
 
-Access the API:
+# Access the API:
 
 Swagger UI: http://localhost:8080/swagger-ui/index.html
 
@@ -88,7 +87,7 @@ Build Docker image:
 docker build -t isc-store-api .
 
 
-Run container:
+# Run container:
 
 docker run -p 8080:8080 isc-store-api
 
@@ -108,7 +107,7 @@ The response will return a JWT token. Use this token in the Authorization header
 
 Authorization: Bearer <your_token_here>
 
-API Endpoints
+# API Endpoints
 
 /users – Register new users
 

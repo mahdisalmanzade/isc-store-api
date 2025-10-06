@@ -26,6 +26,7 @@ public class UserController {
         this.userService = userService;
     }
 
+    // Handle sorting
     @GetMapping
     public Iterable<UserDto> getAllUsers(
             @RequestParam(required = false, defaultValue = "", name = "sort") String sortBy

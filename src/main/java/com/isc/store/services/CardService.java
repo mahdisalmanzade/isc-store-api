@@ -4,10 +4,7 @@ import com.isc.store.dtos.CartDto;
 import com.isc.store.entities.Cart;
 import com.isc.store.mappers.CartMapper;
 import com.isc.store.repositories.CartRepository;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.util.UriComponentsBuilder;
 
 @Service
 public class CardService {

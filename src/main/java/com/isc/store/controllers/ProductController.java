@@ -1,17 +1,12 @@
 package com.isc.store.controllers;
 
 import com.isc.store.dtos.ProductDto;
-import com.isc.store.entities.Product;
-import com.isc.store.mappers.ProductMapper;
-import com.isc.store.repositories.CategoryRepository;
-import com.isc.store.repositories.ProductRepository;
 import com.isc.store.services.ProductService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/products")

@@ -7,10 +7,8 @@ import com.isc.store.exceptions.ProductNotFoundException;
 import com.isc.store.mappers.ProductMapper;
 import com.isc.store.repositories.CategoryRepository;
 import com.isc.store.repositories.ProductRepository;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
 

@@ -1,12 +1,9 @@
 package com.isc.store.controllers;
 
 import com.isc.store.dtos.CartDto;
-import com.isc.store.entities.Cart;
-import com.isc.store.mappers.CartMapper;
-import com.isc.store.repositories.CartRepository;
+import com.isc.store.services.CardService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,20 +15,15 @@ import org.springframework.web.util.UriComponentsBuilder;
 @RequestMapping("/carts")
 public class CardController {
 
-    private final CartRepository cartRepository;
-    private final CartMapper cartMapper;
+    private final CardService cardService;
     @PostMapping
     public ResponseEntity<CartDto> createCart(
             UriComponentsBuilder uriComponentsBuilder
     ) {
-        var cart = new Cart();
-        cartRepository.save(cart);
-        var cartDto = cartMapper.mapToDto(cart);
+        var createdCart = cardService.createCart();
 
-        uriComponentsBuilder.path("/carts/{id}").buildAndExpand(cartDto.getId()).toUri();
+        uriComponentsBuilder.path("/carts/{id}").buildAndExpand(createdCart.getId()).toUri();
 
-        return new ResponseEntity<>(cartDto, HttpStatus.CREATED);
-
-
+        return new ResponseEntity<>(createdCart, HttpStatus.CREATED);
     }
 }

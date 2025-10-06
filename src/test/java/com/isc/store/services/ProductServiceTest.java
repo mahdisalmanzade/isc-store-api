@@ -38,7 +38,6 @@ class ProductServiceTest {
         MockitoAnnotations.openMocks(this);
     }
 
-    // -------------------- getAllProducts --------------------
     @Test
     void testGetAllProducts_WithCategory() {
         Byte categoryId = 1;
@@ -70,7 +69,6 @@ class ProductServiceTest {
         verify(productMapper).mapToProductDto(product);
     }
 
-    // -------------------- getProduct --------------------
     @Test
     void testGetProduct_Success() {
         Long productId = 1L;
@@ -95,7 +93,6 @@ class ProductServiceTest {
         assertThrows(ProductNotFoundException.class, () -> productService.getProduct(productId));
     }
 
-    // -------------------- createProduct --------------------
     @Test
     void testCreateProduct_Success() {
         ProductDto dto = new ProductDto();
@@ -130,7 +127,6 @@ class ProductServiceTest {
         assertThrows(CategoryNotFoundException.class, () -> productService.createProduct(dto));
     }
 
-    // -------------------- updateProduct --------------------
     @Test
     void testUpdateProduct_Success() {
         Long productId = 1L;
@@ -181,7 +177,6 @@ class ProductServiceTest {
         assertThrows(CategoryNotFoundException.class, () -> productService.updateProduct(productId, dto));
     }
 
-    // -------------------- deleteProduct --------------------
     @Test
     void testDeleteProduct_Success() {
         Long productId = 1L;

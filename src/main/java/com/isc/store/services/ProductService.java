@@ -2,6 +2,8 @@ package com.isc.store.services;
 
 import com.isc.store.dtos.ProductDto;
 import com.isc.store.entities.Product;
+import com.isc.store.exceptions.CategoryNotFoundException;
+import com.isc.store.exceptions.ProductNotFoundException;
 import com.isc.store.mappers.ProductMapper;
 import com.isc.store.repositories.CategoryRepository;
 import com.isc.store.repositories.ProductRepository;
@@ -24,8 +26,7 @@ public class ProductService {
         this.categoryRepository = categoryRepository;
     }
 
-    public List<ProductDto> getAllProducts
-            (@RequestParam(name="categoryId", required = false) Byte categoryId) {
+    public List<ProductDto> getAllProducts (Byte categoryId) {
 
         List<Product> products;
         if(categoryId != null) {
@@ -41,65 +42,48 @@ public class ProductService {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProductDto> getProduct(@PathVariable Long id) {
-        var product = productRepository.findById(id).orElse(null);
-        if (product == null) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(productMapper.mapToProductDto(product));
+    public ProductDto getProduct(@PathVariable Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException(id));
+
+        return productMapper.mapToProductDto(product);
     }
 
 
     @PostMapping
-    public ResponseEntity<ProductDto> createProduct(
-            @RequestBody ProductDto productDto,
-            UriComponentsBuilder uriBuilder) {
-        var category = categoryRepository.findById(productDto.getCategoryId()).orElse(null);
-        if (category == null) {
-            return ResponseEntity.badRequest().build();
-        }
+    public ProductDto createProduct(ProductDto productDto) {
+        var category = categoryRepository.findById(productDto.getCategoryId())
+                .orElseThrow(() -> new CategoryNotFoundException(productDto.getCategoryId()));
 
-        var product = productMapper.mapToProductEntity(productDto);
+        Product product = productMapper.mapToProductEntity(productDto);
         product.setCategory(category);
-        productRepository.save(product);
-        productDto.setId(product.getId());
+        Product saved = productRepository.save(product);
 
-        var uri = uriBuilder.path("/products/{id}").buildAndExpand(productDto.getId()).toUri();
-
-        return ResponseEntity.created(uri).body(productDto);
+        return productMapper.mapToProductDto(saved);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProductDto> updateProduct(
+    public ProductDto updateProduct(
             @PathVariable Long id,
             @RequestBody ProductDto productDto) {
-        var category = categoryRepository.findById(productDto.getCategoryId()).orElse(null);
-        if (category == null) {
-            return ResponseEntity.badRequest().build();
-        }
+        var category = categoryRepository.findById(productDto.getCategoryId())
+                .orElseThrow(() -> new CategoryNotFoundException(productDto.getCategoryId()));
 
-        var product = productRepository.findById(id).orElse(null);
-        if (product == null) {
-            return ResponseEntity.notFound().build();
-        }
+        Product existingProduct = productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException(id));
 
-        productMapper.update(productDto, product);
-        product.setCategory(category);
-        productRepository.save(product);
-        productDto.setId(product.getId());
+        productMapper.update(productDto, existingProduct);
+        existingProduct.setCategory(category);
 
-        return ResponseEntity.ok(productDto);
+        Product saved = productRepository.save(existingProduct);
+        return productMapper.mapToProductDto(saved);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
-        var product = productRepository.findById(id).orElse(null);
-        if (product == null) {
-            return ResponseEntity.notFound().build();
-        }
+    public void deleteProduct(@PathVariable Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException(id));
 
         productRepository.delete(product);
-
-        return ResponseEntity.noContent().build();
     }
 }

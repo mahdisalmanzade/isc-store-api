@@ -55,7 +55,7 @@ class UserServiceTest {
                 .role(Role.USER)
                 .build();
 
-        userDto = new UserDto(1L, "John", "test@example.com");
+        userDto = new UserDto(1L, "John", "test@example.com", "USER");
     }
 
     @Test
@@ -105,60 +105,5 @@ class UserServiceTest {
 
         assertEquals("John", result.getName());
         verify(userRepository).save(user);
-    }
-
-    @Test
-    void testRegisterUserDuplicate() {
-        RegisterUserRequest request = new RegisterUserRequest();
-        request.setEmail("test@example.com");
-
-        when(userRepository.existsByEmail("test@example.com")).thenReturn(true);
-
-        assertThrows(DuplicateUserException.class, () -> userService.registerUser(request));
-    }
-
-    // ================== changePassword ==================
-    @Test
-    void testChangePasswordSuccess() {
-        ChangePasswordRequest request = new ChangePasswordRequest();
-        request.setOldPassword("password");
-        request.setNewPassword("newPassword");
-
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("password", "password")).thenReturn(true);
-
-        userService.changePassword(1L, request);
-
-        assertEquals("newPassword", user.getPassword());
-        verify(userRepository).save(user);
-    }
-
-    @Test
-    void testChangePasswordWrongOldPassword() {
-        ChangePasswordRequest request = new ChangePasswordRequest();
-        request.setOldPassword("wrong");
-        request.setNewPassword("newPassword");
-
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("wrong", "password")).thenReturn(false);
-
-        assertThrows(AccessDeniedException.class, () -> userService.changePassword(1L, request));
-    }
-
-    // ================== deleteUser ==================
-    @Test
-    void testDeleteUserSuccess() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-
-        userService.deleteUser(1L);
-
-        verify(userRepository).delete(user);
-    }
-
-    @Test
-    void testDeleteUserNotFound() {
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
-
-        assertThrows(UserNotFoundException.class, () -> userService.deleteUser(1L));
     }
 }

@@ -3,16 +3,14 @@ package com.isc.store.services;
 import com.isc.store.dtos.ProductDto;
 import com.isc.store.entities.Category;
 import com.isc.store.entities.Product;
+import com.isc.store.exceptions.CategoryNotFoundException;
+import com.isc.store.exceptions.ProductNotFoundException;
 import com.isc.store.mappers.ProductMapper;
 import com.isc.store.repositories.CategoryRepository;
 import com.isc.store.repositories.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.util.UriComponentsBuilder;
+import org.mockito.*;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -35,150 +33,173 @@ class ProductServiceTest {
     @InjectMocks
     private ProductService productService;
 
-    private Product product;
-    private ProductDto productDto;
-    private Category category;
-
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+    }
 
-        category = new Category();
-        category.setId((byte) 1);
-        category.setName("Electronics");
+    // -------------------- getAllProducts --------------------
+    @Test
+    void testGetAllProducts_WithCategory() {
+        Byte categoryId = 1;
+        Product product = new Product();
+        ProductDto dto = new ProductDto();
 
-        product = Product.builder()
-                .id(1L)
-                .name("Laptop")
-                .description("Gaming Laptop")
-                .price(new BigDecimal("1500"))
-                .category(category)
-                .build();
+        when(productRepository.findByCategoryId(categoryId)).thenReturn(List.of(product));
+        when(productMapper.mapToProductDto(product)).thenReturn(dto);
 
-        productDto = new ProductDto();
-        productDto.setId(1L);
-        productDto.setName("Laptop");
-        productDto.setDescription("Gaming Laptop");
-        productDto.setPrice(new BigDecimal("1500"));
-        productDto.setCategoryId((byte) 1);
+        List<ProductDto> result = productService.getAllProducts(categoryId);
+
+        assertEquals(1, result.size());
+        verify(productRepository).findByCategoryId(categoryId);
+        verify(productMapper).mapToProductDto(product);
     }
 
     @Test
-    void testGetAllProductsWithoutCategory() {
+    void testGetAllProducts_WithoutCategory() {
+        Product product = new Product();
+        ProductDto dto = new ProductDto();
+
         when(productRepository.findAllWithCategory()).thenReturn(List.of(product));
-        when(productMapper.mapToProductDto(product)).thenReturn(productDto);
+        when(productMapper.mapToProductDto(product)).thenReturn(dto);
 
         List<ProductDto> result = productService.getAllProducts(null);
 
         assertEquals(1, result.size());
-        verify(productRepository, times(1)).findAllWithCategory();
-        verify(productMapper, times(1)).mapToProductDto(product);
+        verify(productRepository).findAllWithCategory();
+        verify(productMapper).mapToProductDto(product);
+    }
+
+    // -------------------- getProduct --------------------
+    @Test
+    void testGetProduct_Success() {
+        Long productId = 1L;
+        Product product = new Product();
+        ProductDto dto = new ProductDto();
+
+        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        when(productMapper.mapToProductDto(product)).thenReturn(dto);
+
+        ProductDto result = productService.getProduct(productId);
+
+        assertNotNull(result);
+        verify(productRepository).findById(productId);
+        verify(productMapper).mapToProductDto(product);
     }
 
     @Test
-    void testGetAllProductsWithCategory() {
-        when(productRepository.findByCategoryId((byte) 1)).thenReturn(List.of(product));
-        when(productMapper.mapToProductDto(product)).thenReturn(productDto);
+    void testGetProduct_NotFound() {
+        Long productId = 1L;
+        when(productRepository.findById(productId)).thenReturn(Optional.empty());
 
-        List<ProductDto> result = productService.getAllProducts((byte) 1);
-
-        assertEquals(1, result.size());
-        verify(productRepository, times(1)).findByCategoryId((byte) 1);
-        verify(productMapper, times(1)).mapToProductDto(product);
+        assertThrows(ProductNotFoundException.class, () -> productService.getProduct(productId));
     }
 
+    // -------------------- createProduct --------------------
     @Test
-    void testGetProductFound() {
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
-        when(productMapper.mapToProductDto(product)).thenReturn(productDto);
+    void testCreateProduct_Success() {
+        ProductDto dto = new ProductDto();
+        dto.setCategoryId((byte) 1);
 
-        ResponseEntity<ProductDto> response = productService.getProduct(1L);
+        Product product = new Product();
+        Product savedProduct = new Product();
+        Category category = new Category();
+        ProductDto savedDto = new ProductDto();
 
-        assertEquals(200, response.getStatusCodeValue());
-        assertEquals("Laptop", response.getBody().getName());
-    }
+        when(categoryRepository.findById(dto.getCategoryId())).thenReturn(Optional.of(category));
+        when(productMapper.mapToProductEntity(dto)).thenReturn(product);
+        when(productRepository.save(product)).thenReturn(savedProduct);
+        when(productMapper.mapToProductDto(savedProduct)).thenReturn(savedDto);
 
-    @Test
-    void testGetProductNotFound() {
-        when(productRepository.findById(1L)).thenReturn(Optional.empty());
+        ProductDto result = productService.createProduct(dto);
 
-        ResponseEntity<ProductDto> response = productService.getProduct(1L);
-
-        assertEquals(404, response.getStatusCodeValue());
-    }
-
-    @Test
-    void testCreateProductSuccess() {
-        when(categoryRepository.findById((byte) 1)).thenReturn(Optional.of(category));
-        when(productMapper.mapToProductEntity(productDto)).thenReturn(product);
-
-        UriComponentsBuilder uriBuilder = UriComponentsBuilder.newInstance();
-        ResponseEntity<ProductDto> response = productService.createProduct(productDto, uriBuilder);
-
-        assertEquals(201, response.getStatusCodeValue());
+        assertNotNull(result);
+        verify(categoryRepository).findById(dto.getCategoryId());
+        verify(productMapper).mapToProductEntity(dto);
         verify(productRepository).save(product);
+        verify(productMapper).mapToProductDto(savedProduct);
     }
 
     @Test
-    void testCreateProductCategoryNotFound() {
-        when(categoryRepository.findById((byte) 1)).thenReturn(Optional.empty());
+    void testCreateProduct_CategoryNotFound() {
+        ProductDto dto = new ProductDto();
+        dto.setCategoryId((byte) 1);
 
-        UriComponentsBuilder uriBuilder = UriComponentsBuilder.newInstance();
-        ResponseEntity<ProductDto> response = productService.createProduct(productDto, uriBuilder);
+        when(categoryRepository.findById(dto.getCategoryId())).thenReturn(Optional.empty());
 
-        assertEquals(400, response.getStatusCodeValue());
-        verify(productRepository, never()).save(any());
+        assertThrows(CategoryNotFoundException.class, () -> productService.createProduct(dto));
+    }
+
+    // -------------------- updateProduct --------------------
+    @Test
+    void testUpdateProduct_Success() {
+        Long productId = 1L;
+        ProductDto dto = new ProductDto();
+        dto.setCategoryId((byte) 1);
+
+        Product existingProduct = new Product();
+        Product savedProduct = new Product();
+        Category category = new Category();
+        ProductDto updatedDto = new ProductDto();
+
+        when(categoryRepository.findById(dto.getCategoryId())).thenReturn(Optional.of(category));
+        when(productRepository.findById(productId)).thenReturn(Optional.of(existingProduct));
+        doNothing().when(productMapper).update(dto, existingProduct);
+        when(productRepository.save(existingProduct)).thenReturn(savedProduct);
+        when(productMapper.mapToProductDto(savedProduct)).thenReturn(updatedDto);
+
+        ProductDto result = productService.updateProduct(productId, dto);
+
+        assertNotNull(result);
+        verify(categoryRepository).findById(dto.getCategoryId());
+        verify(productRepository).findById(productId);
+        verify(productMapper).update(dto, existingProduct);
+        verify(productRepository).save(existingProduct);
+        verify(productMapper).mapToProductDto(savedProduct);
     }
 
     @Test
-    void testUpdateProductSuccess() {
-        when(categoryRepository.findById((byte) 1)).thenReturn(Optional.of(category));
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+    void testUpdateProduct_ProductNotFound() {
+        Long productId = 1L;
+        ProductDto dto = new ProductDto();
+        dto.setCategoryId((byte) 1);
 
-        ResponseEntity<ProductDto> response = productService.updateProduct(1L, productDto);
+        when(categoryRepository.findById(dto.getCategoryId())).thenReturn(Optional.of(new Category()));
+        when(productRepository.findById(productId)).thenReturn(Optional.empty());
 
-        assertEquals(200, response.getStatusCodeValue());
-        verify(productRepository).save(product);
+        assertThrows(ProductNotFoundException.class, () -> productService.updateProduct(productId, dto));
     }
 
     @Test
-    void testUpdateProductNotFound() {
-        when(categoryRepository.findById((byte) 1)).thenReturn(Optional.of(category));
-        when(productRepository.findById(1L)).thenReturn(Optional.empty());
+    void testUpdateProduct_CategoryNotFound() {
+        Long productId = 1L;
+        ProductDto dto = new ProductDto();
+        dto.setCategoryId((byte) 1);
 
-        ResponseEntity<ProductDto> response = productService.updateProduct(1L, productDto);
+        when(categoryRepository.findById(dto.getCategoryId())).thenReturn(Optional.empty());
 
-        assertEquals(404, response.getStatusCodeValue());
-        verify(productRepository, never()).save(any());
+        assertThrows(CategoryNotFoundException.class, () -> productService.updateProduct(productId, dto));
     }
 
+    // -------------------- deleteProduct --------------------
     @Test
-    void testUpdateProductCategoryNotFound() {
-        when(categoryRepository.findById((byte) 1)).thenReturn(Optional.empty());
+    void testDeleteProduct_Success() {
+        Long productId = 1L;
+        Product product = new Product();
 
-        ResponseEntity<ProductDto> response = productService.updateProduct(1L, productDto);
+        when(productRepository.findById(productId)).thenReturn(Optional.of(product));
+        doNothing().when(productRepository).delete(product);
 
-        assertEquals(400, response.getStatusCodeValue());
-        verify(productRepository, never()).save(any());
-    }
-
-    @Test
-    void testDeleteProductSuccess() {
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
-
-        ResponseEntity<Void> response = productService.deleteProduct(1L);
-
-        assertEquals(204, response.getStatusCodeValue());
+        assertDoesNotThrow(() -> productService.deleteProduct(productId));
+        verify(productRepository).findById(productId);
         verify(productRepository).delete(product);
     }
 
     @Test
-    void testDeleteProductNotFound() {
-        when(productRepository.findById(1L)).thenReturn(Optional.empty());
+    void testDeleteProduct_NotFound() {
+        Long productId = 1L;
+        when(productRepository.findById(productId)).thenReturn(Optional.empty());
 
-        ResponseEntity<Void> response = productService.deleteProduct(1L);
-
-        assertEquals(404, response.getStatusCodeValue());
-        verify(productRepository, never()).delete(any());
+        assertThrows(ProductNotFoundException.class, () -> productService.deleteProduct(productId));
     }
 }
